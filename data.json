@@ -1,0 +1,38 @@
+{ "databaseChangeLog": [
+  {
+    "changeSet": {
+      "id": "1702402008651-1",
+      "author": "adeelmalik (generated)",
+      "changes": [
+        {
+          "insert": {
+            "columns": [
+              {
+                "column": {
+                  "name": "FIRSTNAME",
+                  "value": "Foo"
+                }
+              },
+              {
+                "column": {
+                  "name": "LASTNAME",
+                  "value": "Bar"
+                }
+              },
+              {
+                "column": {
+                  "name": "DYNDATA",
+                  "value": "create or replace FUNCTION      ${schema.name}.F_GET_ANNUAL_SEASONAL_PERIOD(p_market IN VARCHAR2, p_indate  IN DATE , p_date_type IN VARCHAR2)\nRETURN VARCHAR2 AS\n/**************************************************************/\n/*    Purpose : Get the annual tag Start/End Dates for market with seasoal tag dates\n/**************************************************************/\n    vReturn  DATE;\n    v_annual_tag_date   DATE;\n\nBEGIN\n       DBMS_OUTPUT.PUT_LINE( 'p_indate ==> ' ||p_indate);\n              DBMS_OUTPUT.PUT_LINE( 'p_market ==> ' ||p_market);\n\n\n   IF p_market = 'MISO'\n   THEN\n       -- Fetch the CPY tag date\n       SELECT TO_DATE(lookup_str_value1||TO_CHAR(p_indate,'YYYY'),'MMDDYYYY')\n       INTO v_annual_tag_date\n       from ALPS_MML_LOOKUP\n       WHERE lookup_group = 'MARKET_ANNUAL_TAG'\n       AND lookup_code = p_market;\n       --\n\n       IF p_indate < v_annual_tag_date\n       THEN\n         SELECT ADD_MONTHS(v_annual_tag_date, -12)\n         INTO v_annual_tag_date\n         FROM dual;\n        --------\n       ELSIF p_indate >=  ADD_MONTHS(v_annual_tag_date, 12)\n        THEN\n            SELECT ADD_MONTHS(v_annual_tag_date, 12)\n            INTO v_annual_tag_date\n         FROM dual;\n        ----------\n       ELSIF p_indate >= v_annual_tag_date\n       THEN\n         SELECT v_annual_tag_date\n         INTO v_annual_tag_date\n         FROM dual;\n       END IF;\n       --\n\n       IF p_date_type = 'STOP'\n       THEN\n         v_annual_tag_date := ADD_MONTHS (v_annual_tag_date, 12) - (1 / (24 * 60 * 60));\n       END IF;\n       --\n       RETURN TO_CHAR(v_annual_tag_date,'YYYY-MM-DD HH24:MI:SS');\n\n   END IF;\nEXCEPTION\n when others then\n    RETURN TO_CHAR(p_indate,'YYYY-MM-DD HH24:MI:SS');\n\nEND;\n/"
+                }
+              }
+            ]
+            ,
+            "tableName": "LIQUIBASE"
+          }
+        }
+      ]
+      
+    }
+  }
+  
+]}

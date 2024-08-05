@@ -1,0 +1,135 @@
+
+parameters:
+- name: LBCOMMAND
+  displayName: Choose a Liquibase command to run
+  values:
+    - update
+    - rollback
+  default: update
+- name: TAG
+  displayName: Specify a tag when LBCOMMAND=UPDATE
+  type: string
+  default: release1
+- name: ARTIFACTNUMBER
+  displayName: Artifact Number to use for UAT rollback # Human-readable name for the parameter
+  type: string
+  default: 0
+- name: ROLLBACKTAG
+  displayName: Specify a tag when LBCOMMAND=ROLLBACK
+  type: string
+  default: release1
+
+pr: 
+  branches:
+    include: 
+      - release
+
+  # Trigger on merges to any branch
+trigger: none
+# trigger:
+  # branches:
+    # include:
+    # - 'dev'
+    # - 'release'
+    # - 'prod'
+    # - 'AB#*'
+
+name: $(Application.Name)-$(Build.BuildId)-UAT
+
+variables:
+- template: variables.yml
+- group: Liquibase_Variables
+
+pool:
+  name: $(Agent.PoolName)
+
+stages:
+
+- stage: CreateArtifact
+  condition: and (true, contains(variables['Build.SourceBranch'], 'release'), eq('${{ parameters.LBCOMMAND }}', 'update'))
+  pool: Windows
+  jobs:
+  - job: PublishArtifact
+    steps:
+    - publish: $(System.DefaultWorkingDirectory)
+      artifact: $(Application.Name)-$(Build.BuildId)
+      displayName: Publish $(Application.Name)-$(Build.BuildId)
+
+- stage: UAT_Update
+  condition: and (true, contains(variables['Build.SourceBranch'], 'release'), eq('${{ parameters.LBCOMMAND }}', 'update'))
+  pool: Windows
+  jobs:
+
+  - job: DBUpdate
+    displayName: 'DB Update'
+    steps:
+    - checkout: none    # Disable repository checkout for this step.
+    - download: current
+      displayName: Download $(Application.Name)-$(Build.BuildId)
+      artifact: $(Application.Name)-$(Build.BuildId)
+      patterns: |
+        sqlcode/**
+        changelog.xml
+    - task: PowerShell@2
+      displayName: 'Liquibase-Flow'
+      inputs:
+        targetType: 'inline'
+        script: |
+          echo "========== Database UPDATE ==========="
+          echo parameters.LBCOMMAND=${{ parameters.LBCOMMAND }}
+          echo SCHEMA=${env:SCHEMA}
+          echo TAG=${env:TAG}
+          echo Build.BuildId=$(Build.BuildId)
+          dir
+          C:\agent\_work\_tool\liquibase-4.24.0\liquibase.bat flow --flow-file=liquibase.flowfile-cd.yaml
+          Write-Host Last exit code: $LASTEXITCODE
+      env:
+        LBCOMMAND: ${{ parameters.LBCOMMAND }}
+        TAG: ${{ parameters.TAG }}
+        SCHEMA: $(UAT_SCHEMA)
+        LIQUIBASE_COMMAND_URL: $(UAT_URL)
+        LIQUIBASE_COMMAND_USERNAME: $(UAT_USERNAME)
+        LIQUIBASE_COMMAND_PASSWORD: $(UAT_PASSWORD)
+
+
+- stage: UAT_Rollback
+  # condition: and(true, contains(variables['system.pullRequest.targetBranchName'], 'release'))
+  condition: and (true, contains(variables['Build.SourceBranch'], 'release'), eq('${{ parameters.LBCOMMAND }}', 'rollback'))
+  pool: Windows
+  jobs:
+  - job: DBRollback
+    displayName: 'DB Rollback tag=${{ parameters.ROLLBACKTAG }}'
+    steps:
+    - checkout: none    # Disable repository checkout for this step.
+    - task: DownloadPipelineArtifact@2
+      displayName: 'Download-Artifact-${{ parameters.ARTIFACTNUMBER }}'
+      inputs:
+        buildType: 'specific'
+        artifactName: '$(Application.Name)-${{ parameters.ARTIFACTNUMBER }}'
+        targetPath: $(Build.SourcesDirectory)
+        project: 'Engie'
+        definition: ALPS DB - UAT
+        buildVersionToDownload: 'specific'
+        pipelineId: ${{ parameters.ARTIFACTNUMBER }}
+        itemPattern: |
+          sqlcode/**
+          changelog.xml
+    - task: PowerShell@2
+      displayName: 'Liquibase-Flow'
+      inputs:
+        targetType: 'inline'
+        script: |
+          echo "========== Database ROLLBACK ==========="
+          echo parameters.LBCOMMAND=${{ parameters.LBCOMMAND }}
+          echo SCHEMA=${env:SCHEMA}
+          echo ROLLBACKTAG=${env:ROLLBACKTAG}
+          dir
+          C:\agent\_work\_tool\liquibase-4.24.0\liquibase.bat flow --flow-file=liquibase.flowfile-cd-rollback.yaml
+          Write-Host Last exit code: $LASTEXITCODE
+      env:
+        LBCOMMAND: ${{ parameters.LBCOMMAND }}
+        SCHEMA: $(UAT_SCHEMA)
+        ROLLBACKTAG: ${{ parameters.ROLLBACKTAG }}        # When rolling back UAT, the ROLLBACKTAG is user provided parameter
+        LIQUIBASE_COMMAND_URL: $(UAT_URL)
+        LIQUIBASE_COMMAND_USERNAME: $(UAT_USERNAME)
+        LIQUIBASE_COMMAND_PASSWORD: $(UAT_PASSWORD)

@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+  xmlns:pro="http://www.liquibase.org/xml/ns/pro"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog 
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd
+    http://www.liquibase.org/xml/ns/dbchangelog-ext 
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd
+    http://www.liquibase.org/xml/ns/pro 
+    http://www.liquibase.org/xml/ns/pro/liquibase-pro-4.1.xsd" >
+
+	<property  name="PE"  value="@supe"  context="UAT"/>
+	<property  name="PE"  value="@tppe"  context="PROD"/>
+
+
+<!-- Alternate names for schema=CMS -->
+  <property  name="schema.name"  value="CMS_test"  context="TEST"/>
+	<property  name="schema.name"  value="CMS_qa"  context="QA"/>
+	<property  name="schema.name"  value="CMS"  context="UAT,PROD"/>
+
+<!-- Alternate names for schema=EPOD -->
+  <property  name="EPOD_schema"  value="EPOD_test"  context="TEST"/>
+	<property  name="EPOD_schema"  value="EPOD_qa"  context="QA"/>
+	<property  name="EPOD_schema"  value="EPOD"  context="UAT,PROD"/>
+
+
+    <changeSet author="johnv" id="F_PE_ANNUAL_SEASONAL_PERIOD" runOnChange="true" >
+      <sqlFile 
+        path="sqlcode/3-functions/F_PE_ANNUAL_SEASONAL_PERIOD.sql" 
+        encoding="UTF-8"
+        splitStatements="true"
+        stripComments="false"
+        endDelimiter="/"
+        relativeToChangelogFile="true"/>
+      <rollback>
+        <sql>
+          <!-- empty -->
+          DROP FUNCTION ${schema.name}.F_PE_ANNUAL_SEASONAL_PERIOD;
+        </sql>
+      </rollback>
+    </changeSet>
+
+    <!-- <changeSet author="johnv" id="F_GET_ANNUAL_SEASONAL_PERIOD" runOnChange="true">
+      <sqlFile 
+        path="sqlcode/3-functions/F_GET_ANNUAL_SEASONAL_PERIOD.sql" 
+        encoding="UTF-8"
+        splitStatements="true"
+        stripComments="false"
+        endDelimiter="/"
+        relativeToChangelogFile="true"/>
+      <rollback>
+        <sql>
+          DROP FUNCTION ${schema.name}.F_GET_ANNUAL_SEASONAL_PERIOD;
+        </sql>
+      </rollback>
+    </changeSet>
+
+    <changeSet author="johnv" id="pb_alps_parser_pkg" runOnChange="true">
+      <sqlFile 
+        path="sqlcode/6-packagebody/ALPS_PARSER_PKG_10312023.pkb" 
+        encoding="UTF-8"
+        splitStatements="true"
+        stripComments="false"
+        endDelimiter="////"
+        relativeToChangelogFile="true"/>
+      <rollback>
+        <sql>
+          DROP PACKAGE BODY ${schema.name}.alps_parser_pkg;
+        </sql>
+      </rollback>
+    </changeSet>
+
+    <changeSet author="johnv" id="pb_alps_mml_pkg" runOnChange="true">
+      <sqlFile 
+        path="sqlcode/6-packagebody/alps_mml_pkg.pkb" 
+        encoding="UTF-8"
+        splitStatements="true"
+        stripComments="false"
+        endDelimiter="////"
+        relativeToChangelogFile="true"/>
+      <rollback>
+        <sql>
+          DROP PACKAGE BODY ${schema.name}.alps_mml_pkg;
+        </sql>
+      </rollback>
+    </changeSet> -->
+
+    <!-- <changeSet author="johnv" id="pb_alps_data_pkg" runOnChange="true">
+      <sqlFile 
+        path="sqlcode/6-packagebody/alps_data_pkg.pkb" 
+        encoding="UTF-8"
+        splitStatements="true"
+        stripComments="false"
+        endDelimiter="////"
+        relativeToChangelogFile="true"/>
+      <rollback>
+        <sql>
+          DROP PACKAGE BODY ${schema.name}.alps_data_pkg;
+        </sql>
+      </rollback>
+    </changeSet> -->
+
+
+  <!-- <includeAll path="main/100_ddl" relativeToChangelogFile="true"/> -->
+  <!-- <include file="main/200_procedures/changelog.xml" relativeToChangelogFile="true"/> -->
+  <!-- <includeAll path="main/700_dml" relativeToChangelogFile="true"/> -->
+
+    <!-- <changeSet author="johnv" id="myFunc_v1" runOnChange="true">
+      <sqlFile 
+        path="sqlcode/functions/myFunc_v1.sql" 
+        encoding="UTF-8"
+        splitStatements="true"
+        stripComments="false"
+        endDelimiter="/"
+        relativeToChangelogFile="true"/>
+      <rollback>
+        <sqlFile 
+          path="sqlcode/functions/myFunc_v0.sql" 
+          encoding="UTF-8"
+          splitStatements="true"
+          stripComments="false"
+          endDelimiter="/"
+          relativeToChangelogFile="true"/>
+      </rollback>
+    </changeSet> -->
+
+
+</databaseChangeLog>
+

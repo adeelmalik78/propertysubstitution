@@ -1,0 +1,18 @@
+# These variables are Azure DevOps variables
+  # not available for consumption inside batch scripts
+  # or Liquibase flow files.
+  # Must use $() notation to access these variables
+  # 
+
+variables:
+# Project.Name is not currently used in the pipeline operations
+  Project.Name: Liquibase
+# Application.Name is used in the pipeline run name and artifact creation/upload steps
+  Application.Name: ALPS
+# Name of Agent pool which is managed at the ADO organization level in Pipelines->Agent Pools
+  Agent.PoolName: Windows
+# BuildId is used in the pipeline run name, labels, and artifact creation/upload steps
+  # App.Version: $(Build.BuildId)
+  App.Version: 1.1
+# SourceBranchName is used in checkout and labels
+  Source.Branch: $(Build.SourceBranchName)

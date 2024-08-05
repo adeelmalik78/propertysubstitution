@@ -1,0 +1,60 @@
+# Starter pipeline
+pr: none
+
+  # Trigger on merges to any branch
+trigger: none
+# trigger:
+  # branches:
+    # include:
+    # - 'dev'
+    # - 'release'
+    # - 'prod'
+    # - 'AB#*'
+
+name: $(Application.Name)-$(Build.BuildId)-CI
+
+# pool:
+#   name: 'Windows'
+
+variables:
+# - name: branchname
+#   value: $[replace(variables['Build.SourceBranch'], 'refs/heads/', '')]
+# - name: labels_branchname
+#   value: $[replace(variables['branchname'], '/','_')]
+- template: variables.yml
+- group: Liquibase_Variables
+
+pool:
+  name: $(Agent.PoolName)
+
+stages:
+- stage: CI
+  # condition: contains(variables['Build.SourceBranch'], 'dev')
+  condition: and(true, contains(variables['system.pullRequest.targetBranchName'], 'release'))
+  jobs:
+  # - job: 
+  #   workspace:
+  #     clean: all
+  - job: DB_CI
+    displayName: 'Database CI'
+    steps:
+    - task: PowerShell@2
+      displayName: 'Liquibase Checks'
+      inputs:
+        targetType: 'inline'
+        script: |
+          echo TAG=${env:TAG}
+          echo App.Version=$(App.Version)
+          echo Build.BuildId=$(Build.BuildId)
+          echo SCHEMA=${env:SCHEMA}
+          C:\agent\_work\_tool\liquibase-4.24.0\liquibase.bat checks run
+            # Deploying to DEV but the following line can be commented if DEV targets not part of pipeline deployment
+            # C:\agent\_work\_tool\liquibase-4.24.0\liquibase.bat flow --flow-file=liquibase.flowfile-ci.yaml
+          Write-Host Last exit code: $LASTEXITCODE
+      env:
+        TAG: $(Build.BuildId)
+        LIQUIBASE_COMMAND_URL: $(DEV_URL)
+        SCHEMA: ${env:DEV_SCHEMA}
+        LIQUIBASE_COMMAND_USERNAME: $(DEV_USERNAME)
+        LIQUIBASE_COMMAND_PASSWORD: $(DEV_PASSWORD)
+        # BYPASS_LIQUIBASE_CHECKS: "false"      # This variable can take on "false" or "bypass" values
